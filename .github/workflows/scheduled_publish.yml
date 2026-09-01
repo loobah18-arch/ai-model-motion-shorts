@@ -40,13 +40,13 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
         run: |
-          python main.py --image assets/model_primary.jpg --motion-ref assets/motion_references/dance_ref.mp4 --transfer-motion
+          python main.py --image assets/model_primary.jpg --motion-ref assets/motion_references/dance_ref2.mp4 --transfer-motion
 
       - name: Upload Generated Dance Motion Videos as Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ai-model-dance-motion-videos
+          name: full-body-dance-motion-videos
           path: |
             output/*.mp4
             output/CATALOG.md
