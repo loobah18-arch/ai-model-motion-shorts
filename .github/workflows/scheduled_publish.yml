@@ -2,7 +2,7 @@ name: Scheduled AI Model Motion Video Publisher
 
 on:
   schedule:
-    # Runs daily at 12:00 UTC (Adjust time as desired)
+    # Runs daily at 12:00 UTC
     - cron: '0 12 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
@@ -40,4 +40,14 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
         run: |
-          python main.py
+          python main.py --image assets/model_primary.jpg --batch
+
+      - name: Upload Generated Videos as Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generated-motion-videos
+          path: |
+            output/*.mp4
+            output/CATALOG.md
+            output/catalog.json

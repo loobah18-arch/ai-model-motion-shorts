@@ -6,5 +6,77 @@
     "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_zoom_in_1788272262.mp4",
     "file_size_mb": 0.67,
     "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:48:01",
+    "motion_type": "pan_down",
+    "file_name": "dev_motion_pan_down_1788272273.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_pan_down_1788272273.mp4",
+    "file_size_mb": 0.1,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:48:06",
+    "motion_type": "pan_up",
+    "file_name": "dev_motion_pan_up_1788272281.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_pan_up_1788272281.mp4",
+    "file_size_mb": 0.07,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:48:18",
+    "motion_type": "subtle_orbit",
+    "file_name": "dev_motion_subtle_orbit_1788272286.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_subtle_orbit_1788272286.mp4",
+    "file_size_mb": 0.31,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:48:21",
+    "motion_type": "parallax_shift",
+    "file_name": "dev_motion_parallax_shift_1788272298.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_parallax_shift_1788272298.mp4",
+    "file_size_mb": 0.09,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:57:05",
+    "motion_type": "zoom_in",
+    "file_name": "dev_motion_zoom_in_1788272823.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_zoom_in_1788272823.mp4",
+    "file_size_mb": 10.47,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:57:08",
+    "motion_type": "pan_down",
+    "file_name": "dev_motion_pan_down_1788272825.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_pan_down_1788272825.mp4",
+    "file_size_mb": 8.13,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:57:11",
+    "motion_type": "pan_up",
+    "file_name": "dev_motion_pan_up_1788272828.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_pan_up_1788272828.mp4",
+    "file_size_mb": 1.2,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:57:13",
+    "motion_type": "subtle_orbit",
+    "file_name": "dev_motion_subtle_orbit_1788272831.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_subtle_orbit_1788272831.mp4",
+    "file_size_mb": 6.74,
+    "resolution": "1080x1920"
+  },
+  {
+    "timestamp": "2026-09-01 19:57:16",
+    "motion_type": "parallax_shift",
+    "file_name": "dev_motion_parallax_shift_1788272833.mp4",
+    "file_path": "/data/data/com.termux/files/home/antigravity/ai-model-motion-shorts/output/dev_motion_parallax_shift_1788272833.mp4",
+    "file_size_mb": 4.79,
+    "resolution": "1080x1920"
   }
 ]
