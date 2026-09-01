@@ -1,0 +1,25 @@
+# Environment variables
+.env
+*.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+env/
+
+# Video Outputs (Ignore generated heavy MP4s, keep catalog)
+output/*.mp4
+output/scratch/
+!output/.gitkeep
+!output/CATALOG.md
+!output/catalog.json
+
+# Instagram session cache
+config/instagram_session.json
+
+# OS files
+.DS_Store
+Thumbs.db
