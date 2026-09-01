@@ -7,6 +7,7 @@ import sys
 import os
 import random
 from pathlib import Path
+from typing import Optional, Dict, Any, List
 from config.settings import DEFAULT_MOTION_PROMPTS, ASSETS_DIR, DEV_MODE, REPLICATE_API_TOKEN
 from core.generator import generate_motion_video
 from core.free_motion import create_free_ffmpeg_motion, batch_generate_dev_motions, CATALOG_MD
