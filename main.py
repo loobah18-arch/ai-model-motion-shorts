@@ -105,8 +105,10 @@ def run_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Model Motion Shorts Pipeline (Dev Phase Edition)")
     parser.add_argument("--image", type=str, help="Path to input AI model photo")
+    parser.add_argument("--motion-ref", type=str, help="Path to reference dance/movement video")
     parser.add_argument("--prompt", type=str, help="Motion generation prompt")
     parser.add_argument("--watermark", type=str, default="@AIModelOfficial", help="Watermark text")
+    parser.add_argument("--transfer-motion", action="store_true", help="Perform AI Pose & Dance Motion Transfer from reference video")
     parser.add_argument("--batch", action="store_true", help="Generate all motion presets (zoom, pan, orbit, parallax)")
     parser.add_argument("--upload", action="store_true", help="Enable live social media publishing (disabled in dev phase by default)")
 
