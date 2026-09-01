@@ -11,14 +11,17 @@ from typing import Optional, Dict, Any, List
 from config.settings import DEFAULT_MOTION_PROMPTS, ASSETS_DIR, DEV_MODE, REPLICATE_API_TOKEN
 from core.generator import generate_motion_video
 from core.free_motion import create_free_ffmpeg_motion, batch_generate_dev_motions, CATALOG_MD
+from core.pose_motion_transfer import transfer_motion_to_model
 from core.editor import format_video_for_vertical_shorts
 from publishers.youtube_publisher import upload_to_youtube
 from publishers.instagram_publisher import upload_to_instagram
 
 def run_pipeline(
     input_image: Optional[Path] = None,
+    motion_ref: Optional[Path] = None,
     prompt: Optional[str] = None,
     watermark: str = "@AIModelOfficial",
+    transfer_motion: bool = False,
     batch: bool = False,
     allow_upload: bool = False
 ):
@@ -26,24 +29,20 @@ def run_pipeline(
     print("🤖 AI MODEL MOTION PIPELINE (DEV PHASE)")
     print("==================================================")
 
-    # 1. Look for AI model photo in assets directory or generate demo image
+    # 1. Select target AI model photo
     if not input_image or not input_image.exists():
-        images = list(ASSETS_DIR.glob("*.jpg")) + list(ASSETS_DIR.glob("*.png")) + list(ASSETS_DIR.glob("*.jpeg"))
-        if images:
-            input_image = random.choice(images)
-            print(f"📸 Using AI model photo from assets: {input_image.name}")
+        primary_model = ASSETS_DIR / "model_primary.jpg"
+        if primary_model.exists():
+            input_image = primary_model
+            print(f"📸 Using primary AI model photo: {input_image.name}")
         else:
-            # Create sample demonstration image if none exists
-            sample_img = ASSETS_DIR / "sample_model.jpg"
-            if not sample_img.exists():
-                print("🎨 Creating sample model image asset for testing...")
-                from PIL import Image, ImageDraw
-                img = Image.new("RGB", (1080, 1920), color=(20, 24, 40))
-                draw = ImageDraw.Draw(img)
-                draw.rectangle([200, 400, 880, 1500], fill=(60, 90, 180))
-                draw.text((380, 900), "AI MODEL PHOTO", fill=(255, 255, 255))
-                img.save(sample_img)
-            input_image = sample_img
+            images = list(ASSETS_DIR.glob("*.jpg")) + list(ASSETS_DIR.glob("*.png"))
+            if images:
+                input_image = random.choice(images)
+                print(f"📸 Using AI model photo from assets: {input_image.name}")
+            else:
+                print("❌ No model photo found in assets/! Please place your AI model photo in assets/model_primary.jpg.")
+                sys.exit(1)
 
     if not prompt:
         prompt = random.choice(DEFAULT_MOTION_PROMPTS)
@@ -52,7 +51,21 @@ def run_pipeline(
     caption = f"{prompt}\n\n#AIModel #AIVideo #Shorts #Reels #ModelFashion #DigitalCreator"
     tags = ["AI Model", "AI Video", "Shorts", "Reels", "Fashion Model", "Digital Human"]
 
-    # 2. Batch Generation vs Single Generation
+    # 2. Pose & Dance Motion Transfer Mode
+    if transfer_motion:
+        print(f"💃 [Pose Motion Transfer Mode] Animating AI Model {input_image.name} with reference dance video...")
+        raw_video = transfer_motion_to_model(model_image_path=input_image, reference_video_path=motion_ref)
+        if not raw_video:
+            raw_video = create_free_ffmpeg_motion(image_path=input_image, motion_type="zoom_in")
+            
+        final_video = format_video_for_vertical_shorts(input_video=raw_video, watermark_text=watermark)
+        print("\n==================================================")
+        print("🎉 POSE & DANCE MOTION TRANSFER COMPLETE")
+        print(f"📁 Output Video: {final_video}")
+        print("==================================================")
+        return
+
+    # 3. Batch Generation vs Single Generation
     if batch:
         generated_files = batch_generate_dev_motions(input_image)
         print("\n==================================================")
@@ -78,12 +91,12 @@ def run_pipeline(
         print("❌ Pipeline failed during video motion step.")
         sys.exit(1)
 
-    # 3. Format & Edit Video to 9:16 Vertical Ratio
+    # 4. Format & Edit Video to 9:16 Vertical Ratio
     final_video = format_video_for_vertical_shorts(input_video=raw_video, watermark_text=watermark)
     if not final_video:
         final_video = raw_video
 
-    # 4. Upload Control (Skipped during Dev Phase unless --upload passed)
+    # 5. Upload Control
     if not allow_upload:
         print("\n🔒 [DEV PHASE] Uploads are currently DISABLED.")
         print(f"📁 Local Video Ready for Preview: {final_video}")
@@ -114,10 +127,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     img_path = Path(args.image) if args.image else None
+    ref_path = Path(args.motion_ref) if args.motion_ref else None
     run_pipeline(
         input_image=img_path,
+        motion_ref=ref_path,
         prompt=args.prompt,
         watermark=args.watermark,
+        transfer_motion=args.transfer_motion,
         batch=args.batch,
         allow_upload=args.upload
     )
