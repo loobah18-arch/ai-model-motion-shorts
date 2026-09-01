@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run AI Motion Shorts Pipeline
+      - name: Run AI Pose & Dance Motion Transfer Pipeline
         env:
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -40,13 +40,13 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
         run: |
-          python main.py --image assets/model_primary.jpg --batch
+          python main.py --image assets/model_primary.jpg --motion-ref assets/motion_references/dance_ref.mp4 --transfer-motion
 
-      - name: Upload Generated Videos as Artifacts
+      - name: Upload Generated Dance Motion Videos as Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: generated-motion-videos
+          name: ai-model-dance-motion-videos
           path: |
             output/*.mp4
             output/CATALOG.md
