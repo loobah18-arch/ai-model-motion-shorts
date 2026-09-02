@@ -2,9 +2,10 @@
 AI Pose & Motion Transfer Module.
 
 Strategy (in priority order):
-  1. Viggle API  — POST /api/render with ref_image + driving_video (needs VIGGLE_API_KEY)
-  2. Replicate   — runs MimicMotion on GPU cloud (needs REPLICATE_API_TOKEN)
-  3. Hard fail   — raises informative error, never silently falls back to a static video
+  1. Kaggle T4 GPU — 30 hours/week FREE compute (needs KAGGLE_USERNAME & KAGGLE_KEY)
+  2. Viggle API    — POST /api/render with ref_image + driving_video (needs VIGGLE_API_KEY)
+  3. Replicate     — runs MimicMotion on GPU cloud (needs REPLICATE_API_TOKEN)
+  4. Hard fail     — raises informative error, never silently falls back to a static video
 """
 import os
 import time
@@ -22,12 +23,82 @@ from config.settings import (
 MOTION_REF_DIR = ASSETS_DIR / "motion_references"
 MOTION_REF_DIR.mkdir(exist_ok=True)
 
-VIGGLE_API_KEY = os.environ.get("VIGGLE_API_KEY", "")
-VIGGLE_BASE    = "https://apis.viggle.ai"
+VIGGLE_API_KEY  = os.environ.get("VIGGLE_API_KEY", "")
+KAGGLE_USERNAME = os.environ.get("KAGGLE_USERNAME", "")
+KAGGLE_KEY      = os.environ.get("KAGGLE_KEY", "")
+VIGGLE_BASE     = "https://apis.viggle.ai"
 
 
 # ---------------------------------------------------------------------------
-# Strategy 1: Viggle API  (image + driving video → dancing video)
+# Strategy 1: Kaggle T4 GPU Runner (30 Free Hours/Week)
+# ---------------------------------------------------------------------------
+
+def _run_kaggle(
+    model_image_path: Path,
+    reference_video_path: Path,
+    output_path: Path,
+) -> bool:
+    """
+    Triggers Kaggle T4 GPU kernel via Kaggle API, polls for completion,
+    and downloads full-length 14-second dance transfer video.
+    """
+    user = KAGGLE_USERNAME or os.environ.get("KAGGLE_USERNAME", "")
+    key  = KAGGLE_KEY or os.environ.get("KAGGLE_KEY", "")
+
+    if not user or not key:
+        print("ℹ️  [Kaggle GPU] KAGGLE_USERNAME or KAGGLE_KEY not set — skipping.")
+        return False
+
+    os.environ["KAGGLE_USERNAME"] = user
+    os.environ["KAGGLE_KEY"]      = key
+
+    print(f"🚀 [Kaggle T4 GPU] Authenticated as user '{user}'. Pushing MimicMotion GPU kernel...")
+    kaggle_dir = Path(__file__).resolve().parent.parent / "kaggle"
+
+    try:
+        # Push kernel using kaggle CLI
+        push_cmd = ["kaggle", "kernels", "push", "-p", str(kaggle_dir)]
+        res = subprocess.run(push_cmd, capture_output=True, text=True)
+        print(f"   [Kaggle CLI] {res.stdout.strip()}")
+        if res.returncode != 0 and "Kernel URL" not in res.stdout:
+            print(f"⚠️  [Kaggle GPU] Push notice: {res.stderr.strip()[:200]}")
+
+        kernel_slug = f"{user}/ai-model-mimic-motion-runner"
+        print(f"✅ [Kaggle GPU] Kernel '{kernel_slug}' running on free T4 GPU — polling output...")
+
+        # Poll status for up to 10 minutes
+        for attempt in range(60):
+            time.sleep(10)
+            status_cmd = ["kaggle", "kernels", "status", kernel_slug]
+            st = subprocess.run(status_cmd, capture_output=True, text=True)
+            status_text = st.stdout.strip()
+            print(f"   [{attempt+1}] Kaggle GPU status: {status_text}")
+
+            if "complete" in status_text.lower():
+                print("🎬 [Kaggle GPU] Execution complete! Downloading generated video output...")
+                out_cmd = ["kaggle", "kernels", "output", kernel_slug, "-p", str(OUTPUT_DIR)]
+                subprocess.run(out_cmd, check=True)
+
+                downloaded = OUTPUT_DIR / "kaggle_dance_transfer.mp4"
+                if downloaded.exists():
+                    downloaded.rename(output_path)
+                    print(f"✅ [Kaggle T4 GPU] Dance video successfully generated & saved: {output_path}")
+                    return True
+
+            if "error" in status_text.lower() or "failed" in status_text.lower():
+                print(f"❌ [Kaggle GPU] Kernel run failed: {status_text}")
+                break
+
+        print("ℹ️  [Kaggle GPU] Kernel run timed out or output pending — trying API fallbacks...")
+        return False
+
+    except Exception as e:
+        print(f"⚠️  [Kaggle GPU] Exception: {e}")
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Strategy 2: Viggle API  (image + driving video → dancing video)
 # ---------------------------------------------------------------------------
 
 def _run_viggle(
@@ -35,10 +106,6 @@ def _run_viggle(
     reference_video_path: Path,
     output_path: Path,
 ) -> bool:
-    """
-    Submit a render job to the Viggle API and poll until complete.
-    Returns True and writes the result to output_path on success.
-    """
     key = VIGGLE_API_KEY
     if not key:
         print("ℹ️  [Viggle] No VIGGLE_API_KEY set — skipping.")
@@ -69,7 +136,6 @@ def _run_viggle(
 
         print(f"✅ [Viggle] Job submitted: {job_id} — polling for result...")
 
-        # Poll up to 10 minutes
         for attempt in range(120):
             time.sleep(5)
             status_resp = requests.get(
@@ -98,7 +164,7 @@ def _run_viggle(
                 print(f"❌ [Viggle] Job failed with status '{state}': {status}")
                 return False
 
-        print("❌ [Viggle] Timed out after 10 minutes waiting for render.")
+        print("❌ [Viggle] Timed out waiting for render.")
         return False
 
     except requests.HTTPError as e:
@@ -110,7 +176,7 @@ def _run_viggle(
 
 
 # ---------------------------------------------------------------------------
-# Strategy 1: Replicate zsxkib/mimic-motion  (image + motion video → dance video)
+# Strategy 3: Replicate zsxkib/mimic-motion
 # ---------------------------------------------------------------------------
 
 def _run_replicate(
@@ -125,7 +191,6 @@ def _run_replicate(
 
     try:
         import replicate
-
         client = replicate.Client(api_token=token)
         print("🚀 [Replicate] Submitting zsxkib/mimic-motion job...")
 
@@ -139,12 +204,7 @@ def _run_replicate(
                 }
             )
 
-        # output is a URL string or list of URLs
-        if hasattr(output, "__iter__") and not isinstance(output, str):
-            url = list(output)[0]
-        else:
-            url = str(output)
-
+        url = list(output)[0] if hasattr(output, "__iter__") and not isinstance(output, str) else str(output)
         print(f"✅ [Replicate] Render done — downloading from {url}")
         r = requests.get(url, timeout=300)
         r.raise_for_status()
@@ -158,7 +218,7 @@ def _run_replicate(
 
 
 # ---------------------------------------------------------------------------
-# Strategy 2: Viggle API  (image + driving video → dancing video)
+# Public Entry Point
 # ---------------------------------------------------------------------------
 
 def transfer_motion_to_model(
@@ -170,16 +230,15 @@ def transfer_motion_to_model(
     Transfer dance/body motion from reference_video_path onto model_image_path.
 
     Priority:
-      1. Replicate zsxkib/mimic-motion  (if REPLICATE_API_TOKEN is set)
-      2. Viggle API                      (if VIGGLE_API_KEY is set)
-      3. Hard fail with clear message
+      1. Kaggle T4 GPU (30 Hours/Week FREE - Full 14s Video)
+      2. Viggle API  (if VIGGLE_API_KEY set)
+      3. Replicate   (if REPLICATE_API_TOKEN set)
     """
     model_image_path = Path(model_image_path)
     if not model_image_path.exists():
         print(f"❌ [Motion Transfer] Model image not found: {model_image_path}")
         return None
 
-    # Resolve reference video
     if reference_video_path is None:
         ref_videos = list(MOTION_REF_DIR.glob("*.mp4")) + list(MOTION_REF_DIR.glob("*.mov"))
         if ref_videos:
@@ -193,17 +252,19 @@ def transfer_motion_to_model(
         return None
 
     print(f"💃 [Motion Transfer] '{model_image_path.name}' + '{reference_video_path.name}' → dance video")
-
     output_path = OUTPUT_DIR / f"pose_transfer_{int(time.time())}.mp4"
 
-    # 1. Replicate MimicMotion (primary)
-    if use_cloud_gpu and _run_replicate(model_image_path, reference_video_path, output_path):
+    # 1. Kaggle Free T4 GPU (Primary)
+    if use_cloud_gpu and _run_kaggle(model_image_path, reference_video_path, output_path):
         return output_path
 
-    # 2. Viggle (fallback)
+    # 2. Viggle API (Fallback)
     if use_cloud_gpu and _run_viggle(model_image_path, reference_video_path, output_path):
         return output_path
 
-    print("❌ [Motion Transfer] All engines failed. Check REPLICATE_API_TOKEN or VIGGLE_API_KEY secrets.")
-    return None
+    # 3. Replicate (Fallback)
+    if use_cloud_gpu and _run_replicate(model_image_path, reference_video_path, output_path):
+        return output_path
 
+    print("❌ [Motion Transfer] All engines failed. Check KAGGLE_USERNAME/KEY, VIGGLE_API_KEY, or REPLICATE_API_TOKEN secrets.")
+    return None
