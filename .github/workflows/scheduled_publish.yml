@@ -28,6 +28,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install yt-dlp
+
+      - name: Download Reference Dance Video
+        run: |
+          mkdir -p assets/motion_references
+          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+            --merge-output-format mp4 \
+            -o "assets/motion_references/dance_ref2.mp4" \
+            "https://www.youtube.com/shorts/ccLqDXcmp3w"
+          echo "Downloaded reference video:"
+          ls -lh assets/motion_references/
 
       - name: Run AI Pose & Dance Motion Transfer Pipeline
         env:
