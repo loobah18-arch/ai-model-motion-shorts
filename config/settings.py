@@ -17,7 +17,8 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 # Development Mode (True = Generate & save locally, skip external uploads)
 DEV_MODE = os.environ.get("DEV_MODE", "true").lower() in ("true", "1", "yes")
 
-# API Keys (Optional, system defaults to 100% Free local engine)
+# API Keys
+VIGGLE_API_KEY      = os.environ.get("VIGGLE_API_KEY", "")
 REPLICATE_API_TOKEN = os.environ.get("REPLICATE_API_TOKEN", "")
 
 # Social Media Credentials (Used only when --upload flag is passed in production)
