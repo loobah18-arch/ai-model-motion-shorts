@@ -1,6 +1,6 @@
 {
   "id": "bahloo/ai-model-mimic-motion-runner",
-  "title": "AI Model MimicMotion Runner",
+  "title": "ai model mimic motion runner",
   "code_file": "runner.py",
   "language": "python",
   "kernel_type": "script",
