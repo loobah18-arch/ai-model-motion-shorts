@@ -42,22 +42,27 @@ def _run_kaggle(
     Triggers Kaggle T4 GPU kernel via Kaggle API, polls for completion,
     and downloads full-length 14-second dance transfer video.
     """
-    user = KAGGLE_USERNAME or os.environ.get("KAGGLE_USERNAME", "")
-    key  = KAGGLE_KEY or os.environ.get("KAGGLE_KEY", "")
+    user  = KAGGLE_USERNAME or os.environ.get("KAGGLE_USERNAME", "bahloo")
+    token = os.environ.get("KAGGLE_API_TOKEN", "") or KAGGLE_KEY or os.environ.get("KAGGLE_KEY", "")
 
-    if not user or not key:
-        print("ℹ️  [Kaggle GPU] KAGGLE_USERNAME or KAGGLE_KEY not set — skipping.")
+    if not token:
+        print("ℹ️  [Kaggle GPU] KAGGLE_API_TOKEN not set — skipping.")
         return False
 
-    os.environ["KAGGLE_USERNAME"] = user
-    os.environ["KAGGLE_KEY"]      = key
+    os.environ["KAGGLE_API_TOKEN"] = token
+    os.environ["KAGGLE_USERNAME"]  = user
 
-    # Write ~/.kaggle/kaggle.json explicitly for CLI authentication
+    # Write ~/.kaggle/access_token and ~/.kaggle/kaggle.json for Kaggle CLI auth
     import json
     kaggle_config_dir = Path.home() / ".kaggle"
     kaggle_config_dir.mkdir(exist_ok=True)
+
+    access_token_file = kaggle_config_dir / "access_token"
+    access_token_file.write_text(token.strip())
+    access_token_file.chmod(0o600)
+
     config_file = kaggle_config_dir / "kaggle.json"
-    config_file.write_text(json.dumps({"username": user, "key": key}))
+    config_file.write_text(json.dumps({"username": user, "key": token}))
     config_file.chmod(0o600)
 
     print(f"🚀 [Kaggle T4 GPU] Authenticated as user '{user}'. Pushing MimicMotion GPU kernel...")
