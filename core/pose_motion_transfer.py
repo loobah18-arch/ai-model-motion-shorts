@@ -110,7 +110,7 @@ def _run_viggle(
 
 
 # ---------------------------------------------------------------------------
-# Strategy 2: Replicate MimicMotion
+# Strategy 1: Replicate zsxkib/mimic-motion  (image + motion video → dance video)
 # ---------------------------------------------------------------------------
 
 def _run_replicate(
@@ -125,28 +125,40 @@ def _run_replicate(
 
     try:
         import replicate
-        print("🚀 [Replicate] Submitting MimicMotion job...")
+
+        client = replicate.Client(api_token=token)
+        print("🚀 [Replicate] Submitting zsxkib/mimic-motion job...")
+
         with open(model_image_path, "rb") as img, \
              open(reference_video_path, "rb") as vid:
-            output = replicate.run(
-                "camenduru/mimic-motion:latest",
-                input={"image": img, "video": vid,
-                       "width": TARGET_WIDTH, "height": TARGET_HEIGHT},
+            output = client.run(
+                "zsxkib/mimic-motion",
+                input={
+                    "appearance_image": img,
+                    "motion_video":     vid,
+                }
             )
-        url = list(output)[0] if hasattr(output, "__iter__") and not isinstance(output, str) else str(output)
-        print(f"✅ [Replicate] Downloading from {url}...")
-        r = requests.get(url, timeout=120)
+
+        # output is a URL string or list of URLs
+        if hasattr(output, "__iter__") and not isinstance(output, str):
+            url = list(output)[0]
+        else:
+            url = str(output)
+
+        print(f"✅ [Replicate] Render done — downloading from {url}")
+        r = requests.get(url, timeout=300)
         r.raise_for_status()
         output_path.write_bytes(r.content)
-        print(f"✅ [Replicate] Saved: {output_path}")
+        print(f"✅ [Replicate] Saved dance video: {output_path}")
         return True
+
     except Exception as e:
         print(f"⚠️  [Replicate] Failed: {e}")
         return False
 
 
 # ---------------------------------------------------------------------------
-# Public entry point
+# Strategy 2: Viggle API  (image + driving video → dancing video)
 # ---------------------------------------------------------------------------
 
 def transfer_motion_to_model(
@@ -158,8 +170,8 @@ def transfer_motion_to_model(
     Transfer dance/body motion from reference_video_path onto model_image_path.
 
     Priority:
-      1. Viggle API  (if VIGGLE_API_KEY is set)
-      2. Replicate   (if REPLICATE_API_TOKEN is set)
+      1. Replicate zsxkib/mimic-motion  (if REPLICATE_API_TOKEN is set)
+      2. Viggle API                      (if VIGGLE_API_KEY is set)
       3. Hard fail with clear message
     """
     model_image_path = Path(model_image_path)
@@ -184,14 +196,14 @@ def transfer_motion_to_model(
 
     output_path = OUTPUT_DIR / f"pose_transfer_{int(time.time())}.mp4"
 
-    # 1. Viggle
-    if use_cloud_gpu and _run_viggle(model_image_path, reference_video_path, output_path):
-        return output_path
-
-    # 2. Replicate
+    # 1. Replicate MimicMotion (primary)
     if use_cloud_gpu and _run_replicate(model_image_path, reference_video_path, output_path):
         return output_path
 
-    print("❌ [Motion Transfer] No API key available.")
-    print("   → Set VIGGLE_API_KEY as a GitHub Actions secret and re-run the workflow.")
+    # 2. Viggle (fallback)
+    if use_cloud_gpu and _run_viggle(model_image_path, reference_video_path, output_path):
+        return output_path
+
+    print("❌ [Motion Transfer] All engines failed. Check REPLICATE_API_TOKEN or VIGGLE_API_KEY secrets.")
     return None
+
