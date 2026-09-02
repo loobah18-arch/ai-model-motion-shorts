@@ -132,7 +132,7 @@ def _run_replicate(
         with open(model_image_path, "rb") as img, \
              open(reference_video_path, "rb") as vid:
             output = client.run(
-                "zsxkib/mimic-motion",
+                "zsxkib/mimic-motion:b3edd455f68ec4ccf045da8732be7db837cb8832d1a2459ef057ddcd3ff87dea",
                 input={
                     "appearance_image": img,
                     "motion_video":     vid,
