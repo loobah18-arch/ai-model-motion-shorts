@@ -267,10 +267,17 @@ def transfer_motion_to_model(
     print(f"💃 [Motion Transfer] '{model_image_path.name}' + '{reference_video_path.name}' → dance video")
     output_path = OUTPUT_DIR / f"pose_transfer_{int(time.time())}.mp4"
 
-    # 1. Kaggle Free T4 GPU (Primary & Solo Test Mode)
-    print("🧪 [Test Mode] Viggle & Replicate disabled. Testing Kaggle T4 GPU exclusively...")
+    # 1. Kaggle Free T4 GPU (Primary - 30 Hours/Week FREE Compute)
     if use_cloud_gpu and _run_kaggle(model_image_path, reference_video_path, output_path):
         return output_path
 
-    print("❌ [Kaggle Solo Test] Kaggle T4 GPU run failed.")
+    # 2. Viggle API (Fallback)
+    if use_cloud_gpu and _run_viggle(model_image_path, reference_video_path, output_path):
+        return output_path
+
+    # 3. Replicate (Fallback)
+    if use_cloud_gpu and _run_replicate(model_image_path, reference_video_path, output_path):
+        return output_path
+
+    print("❌ [Motion Transfer] All engines failed. Check KAGGLE_API_TOKEN, VIGGLE_API_KEY, or REPLICATE_API_TOKEN secrets.")
     return None
