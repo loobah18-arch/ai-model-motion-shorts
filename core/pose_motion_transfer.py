@@ -52,6 +52,14 @@ def _run_kaggle(
     os.environ["KAGGLE_USERNAME"] = user
     os.environ["KAGGLE_KEY"]      = key
 
+    # Write ~/.kaggle/kaggle.json explicitly for CLI authentication
+    import json
+    kaggle_config_dir = Path.home() / ".kaggle"
+    kaggle_config_dir.mkdir(exist_ok=True)
+    config_file = kaggle_config_dir / "kaggle.json"
+    config_file.write_text(json.dumps({"username": user, "key": key}))
+    config_file.chmod(0o600)
+
     print(f"🚀 [Kaggle T4 GPU] Authenticated as user '{user}'. Pushing MimicMotion GPU kernel...")
     kaggle_dir = Path(__file__).resolve().parent.parent / "kaggle"
 
