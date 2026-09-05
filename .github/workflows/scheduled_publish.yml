@@ -52,5 +52,6 @@ jobs:
           name: full-body-dance-motion-videos
           path: |
             output/*.mp4
+            output/*.log
             output/CATALOG.md
             output/catalog.json
